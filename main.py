@@ -1,4 +1,4 @@
-import random
+import time
 
 class Worker:
     counter = 0
@@ -15,10 +15,17 @@ class Worker:
         return id
 
 class TestInfrastructure:
-    
+
     def __init__(self, cores):
         self.cores = cores
         self.id = "TestingInfrastructure1"
 
     def __str__(self):
         return f"{self.id}"
+
+start_time = time.monotonic_ns()
+
+
+
+end_time = time.monotonic_ns()
+completion_time_s = (end_time-start_time)/10**9
