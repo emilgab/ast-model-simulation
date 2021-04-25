@@ -1,14 +1,17 @@
 # Libraries #
 import time # used for measuring completion times
 import unittest # used for running unit tests
+import multiprocessing as mp # used to run processes in paralell
 
+# Stores unit test suites in a list used later for iteration
+suites = []
 # processing external unit tests #
 # 1: Imports the unit tests classes from external scripts
 from unittests import io, calculations, strings
 # 2: Creates test suites from every class
-io_suite = unittest.TestLoader().loadTestsFromModule(io)
-calculations_suite = unittest.TestLoader().loadTestsFromModule(calculations)
-strings_suite = unittest.TestLoader().loadTestsFromModule(strings)
+suites.append(unittest.TestLoader().loadTestsFromModule(io))
+suites.append(unittest.TestLoader().loadTestsFromModule(calculations))
+suites.append(unittest.TestLoader().loadTestsFromModule(strings))
 ####
 
 class Worker:
@@ -43,10 +46,9 @@ class TestInfrastructure:
 # Flag 1: Getting start time for measuring completion times
 start_time = time.monotonic_ns()
 
-# Runs the unit test suites with verbosity 0 (quiet)
-unittest.TextTestRunner(verbosity=0).run(io_suite)
-unittest.TextTestRunner(verbosity=0).run(calculations_suite)
-unittest.TextTestRunner(verbosity=0).run(strings_suite)
+for suite in suites:
+    # Runs the unit test suites with verbosity 0 (quiet)
+    unittest.TextTestRunner(verbosity=0).run(suite)
 
 # Flag 2: Getting the stop time for measuring completion times
 end_time = time.monotonic_ns()
