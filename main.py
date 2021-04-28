@@ -85,4 +85,12 @@ for time in times:
             tests_to_remove_from_queue.append(key)
     for item in tests_to_remove_from_queue:
         del test_dictionary_queue[item]
+    # Adds the available workers to active workers list from the worker_dictionary_queue.
+    workers_to_remove_from_queue = []
+    for key, value in worker_dictionary_queue.items():
+        if str(value.StartTimeAvailable).ljust(5,"0") == str(time).ljust(5,"0"):
+            worker_active_list.append(value)
+            workers_to_remove_from_queue.append(key)
+    for item in workers_to_remove_from_queue:
+        del worker_dictionary_queue[item]
 ####################
