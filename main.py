@@ -5,10 +5,14 @@ class Worker:
         self.StartTimeAvailable = float(StartTimeAvailable)
         self.PerformanceRating = float(PerformanceRating)
         self.AvailabilityTime = float(AvailabilityTime)
+        self.AvailableToWork = True
     def __str__(self):
         return f"{self.WorkerID}: \n\tStarted working: {self.StartTimeAvailable}\
         \n\tPerformance: {self.PerformanceRating*100}%\
-        \n\tRemaining availability: {self.AvailabilityTime}"
+        \n\tRemaining availability: {self.AvailabilityTime}\
+        \n\tAvailable to work at current time ({time}): {'Yes' if self.AvailableToWork else 'No'}"
+    def assigned_test(self, test):
+        pass
 
 class Test:
     def __init__(self, TestID, ScheduledTime, TestTime):
@@ -18,10 +22,28 @@ class Test:
     def __str__(self):
         return f"{self.TestID}: \n\tScheduled for testing at: {self.ScheduledTime}\
         \n\tTime it takes for testing: {self.TestTime}"
+    def assigned_worker(self, worker):
+        pass
 
 #### PRE-FACE ####
+
+# Uses list comprehension to create the 24 hours (0-23).
+hrs = [str(x) for x in range(0,24)]
+
+# Uses list comprehension to create the minutes in an hour (0-59)
+# Uses .zfill() to create (00, 01, 02, 03 instead of 0,1,2,3)
+min = [str(x).zfill(2) for x in range (0,60)]
+
+# list called "times" that will consist of all the times through a day: "00.00-23.59".
+times = []
+
+# for-loop that iterates through the hrs and min lists and creates the times for a day.
+for x in hrs:
+    for y in min:
+        times.append(f"{x}.{y}")
+
 # Start Time
-time = 0.00
+start_time = 0.00
 
 # Reference the workerlist file to simulate worker scenario
 worker_scenario = "workerlists/1initial_increase_in_worktimes.csv"
@@ -46,3 +68,10 @@ with open(test_scenario,"r") as csv_file:
         split_row = row.split(",")
         test_dictionary_queue[split_row[0]] = Test(split_row[0],split_row[1],split_row[2])
 ##################
+
+#### SIMULATION ####
+for time in times:
+    pass
+
+
+####################
