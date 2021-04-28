@@ -22,6 +22,9 @@ class Worker:
     def assigned_test(self, test):
         self.AvailableToWork = False
         self.AssignedTests.append(test)
+        original_testtime = test_overview_dictionary[test].TestTime
+        number_after_performance = round((original_testtime*60) / self.PerformanceRating)
+        test_overview_dictionary[test].TestTime = float(f"{number_after_performance//60}.{number_after_performance%60}")
     def process(self):
         self.AvailabilityTime -= 1
         if self.AvailabilityTime > 0:
@@ -152,3 +155,6 @@ for time in times:
         except:
             pass
 #### END SIMULATION ####
+
+for test in Test.instances:
+    print(test)
