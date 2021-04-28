@@ -27,6 +27,9 @@ class Test:
 
 #### PRE-FACE ####
 
+# Start Time
+start_time = 0.00
+
 # Uses list comprehension to create the 24 hours (0-23).
 hrs = [str(x) for x in range(0,24)]
 
@@ -41,9 +44,6 @@ times = []
 for x in hrs:
     for y in min:
         times.append(f"{x}.{y}")
-
-# Start Time
-start_time = 0.00
 
 # Reference the workerlist file to simulate worker scenario
 worker_scenario = "workerlists/1initial_increase_in_worktimes.csv"
@@ -67,11 +67,22 @@ with open(test_scenario,"r") as csv_file:
     for row in csv_file.readlines()[1:]:
         split_row = row.split(",")
         test_dictionary_queue[split_row[0]] = Test(split_row[0],split_row[1],split_row[2])
+
+# Following lists will contain the active tests and workers at any given time based on the times in the tasklists and workerlists
+worker_active_list = []
+test_active_list = []
 ##################
 
 #### SIMULATION ####
+
+# Iterates through the times of the day
 for time in times:
-    pass
-
-
+    # Adds the tests scheduled for current time to the "active_tests_queue" from the "test_dictionary_queue"
+    tests_to_remove_from_queue = []
+    for key, value in test_dictionary_queue.items():
+        if str(value.ScheduledTime).ljust(5,"0") == str(time).ljust(5,"0"):
+            test_active_list.append(value)
+            tests_to_remove_from_queue.append(key)
+    for item in tests_to_remove_from_queue:
+        del test_dictionary_queue[item]
 ####################
