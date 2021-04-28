@@ -6,6 +6,7 @@ class Worker:
         self.StartTimeAvailable = float(StartTimeAvailable)
         self.PerformanceRating = float(PerformanceRating)
         self.AvailabilityTime = float(AvailabilityTime)
+        self.JoinedTesting = False
         self.AvailableToWork = True
         self.AssignedTests = []
         self.CompletedTests = []
@@ -21,6 +22,13 @@ class Worker:
     def assigned_test(self, test):
         self.AvailableToWork = False
         self.AssignedTests.append(test)
+    def process(self):
+        self.AvailabilityTime -= 1
+        if self.AvailabilityTime > 0:
+            try:
+                pass
+            except:
+                pass
 
 class Test:
     instances = []
@@ -82,6 +90,10 @@ with open(test_scenario,"r") as csv_file:
         split_row = row.split(",")
         test_dictionary_queue[split_row[0]] = Test(split_row[0],split_row[1],split_row[2])
 
+# Creates duplicate dictoinaries that will be used later for referencing
+worker_overview_dictionary = dict(worker_dictionary_queue)
+test_overview_dictionary = dict(test_dictionary_queue)
+
 # Following lists will contain the active tests and workers at any given time based on the times in the tasklists and workerlists
 active_worker_list = []
 active_test_list = []
@@ -95,6 +107,10 @@ completed_test_dictionary = {}
 ### |
 # Iterates through the times of the day
 for time in times:
+    ### --> SIMULATION "WORK ON TEST"-PHASE: Every worker will process the tests they are assigned by "1" (representing 1 minute)
+    for key,value in worker_overview_dictionary.items():
+        if value.JoinedTesting == True:
+            value.process()
     ### --> SIMULATION "CHECK"-PHASE: Checking the queue dictionaries and adding them in the active lists <-- ###
     # Adds the tests scheduled for current time to the "active_tests_queue" from the "test_dictionary_queue"
     tests_to_remove_from_queue = []
@@ -109,6 +125,7 @@ for time in times:
     for key, value in worker_dictionary_queue.items():
         if str(value.StartTimeAvailable).ljust(5,"0") == str(time).ljust(5,"0"):
             active_worker_list.append(value)
+            worker_overview_dictionary[key].JoinedTesting = True
             workers_to_remove_from_queue.append(key)
     for item in workers_to_remove_from_queue:
         del worker_dictionary_queue[item]
@@ -135,6 +152,3 @@ for time in times:
         except:
             pass
 #### END SIMULATION ####
-
-for x in Test.instances:
-    print(x)

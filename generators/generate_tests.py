@@ -54,7 +54,7 @@ for _ in range(round(len(population)/2)):
             new_pick = pick[:5] + string.ascii_uppercase[random.randint(0,len(string.ascii_uppercase)-1)]
             break
         # Adds the characteristics on how long the test will take.
-        chance_dic[new_pick] = 1 + round(random.uniform(0.25,1.50),2)
+        chance_dic[new_pick] = random.choice([1,2],[8,2]) + round(random.uniform(0.00,0.59),2)
     else:
         # If the time is not already in the dictionary, it will be added.
         chance_dic[pick] = 1 + round(random.uniform(0.25,1.50),2)
