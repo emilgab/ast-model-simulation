@@ -42,6 +42,7 @@ class Worker:
                     self.AssignedTest = None
             else:
                 self.AssignedWork = False
+                self.TotalWaitTime += 1
         else:
             finished_workers.append(self)
             self.JoinedTesting = False
@@ -141,8 +142,13 @@ for time in times:
     # Adds the available workers to active workers list from the worker_dictionary_queue.
     workers_to_remove_from_queue = []
     for key, value in worker_dictionary_queue.items():
-        if len(str(value.StartTimeAvailable))==3:
-            value.StartTimeAvailable = "0"+(str(value.StartTimeAvailable)+"0")
+        if len(str(value.StartTimeAvailable)) < 5:
+            if len(str(value.StartTimeAvailable))==3:
+                value.StartTimeAvailable = "0"+(str(value.StartTimeAvailable)+"0")
+            elif len(str(value.StartTimeAvailable).split(".")[-1]) == 2:
+                value.StartTimeAvailable = str(value.StartTimeAvailable).zfill(5)
+            elif len(str(value.StartTimeAvailable).split(".")[-1]) == 1:
+                value.StartTimeAvailable = str(value.StartTimeAvailable).ljust(5,"0")
         if str(value.StartTimeAvailable).zfill(5) == time:
             active_worker_list.append(value)
             worker_overview_dictionary[key].JoinedTesting = True
@@ -172,3 +178,5 @@ for time in times:
         except:
             pass
 #### END SIMULATION ####
+for x in Test.instances:
+    print(x)
