@@ -144,7 +144,6 @@ for time in times:
         if len(str(value.StartTimeAvailable))==3:
             value.StartTimeAvailable = "0"+(str(value.StartTimeAvailable)+"0")
         if str(value.StartTimeAvailable).zfill(5) == time:
-            print(f"{value.WorkerID} gets added at {time}")
             active_worker_list.append(value)
             worker_overview_dictionary[key].JoinedTesting = True
             workers_to_remove_from_queue.append(key)
@@ -172,5 +171,4 @@ for time in times:
             active_test_list.remove(test)
         except:
             pass
-
 #### END SIMULATION ####
