@@ -7,31 +7,44 @@ class Worker:
         self.PerformanceRating = float(PerformanceRating)
         self.AvailabilityTime = float(AvailabilityTime)
         self.JoinedTesting = False
-        self.AvailableToWork = True
-        self.AssignedTests = []
+        self.AssignedWork = False
+        self.AssignedTest = None
         self.CompletedTests = []
 
-
+        self.TotalWaitTime = 0.0
         self.instances.append(self)
+
     def __str__(self):
         return f"{self.WorkerID}: \n\tStarted working: {self.StartTimeAvailable}\
-        \n\tPerformance: {self.PerformanceRating*100}%\
+        \n\tPerformance: {round(self.PerformanceRating*100)}%\
         \n\tRemaining availability: {self.AvailabilityTime}\
-        \n\tAvailable to work at current time ({time}): {'Yes' if self.AvailableToWork else 'No'}\
-        \n\tAssignedTests: {' '.join(self.AssignedTests)}"
+        \n\tJoinedTesting: {'Yes' if self.JoinedTesting else 'No'}\
+        \n\tAvailable to work at current time ({time}): {'No' if self.AssignedWork and self.JoinedTesting else 'Yes'}\
+        \n\tAssigned Test: {self.AssignedTest if self.AssignedTest else 'None'}\
+        \n\tCompleted Tests: {' '.join(self.CompletedTests)}\
+        \n\tTotal wait time: {self.TotalWaitTime}"
     def assigned_test(self, test):
-        self.AvailableToWork = False
-        self.AssignedTests.append(test)
+        self.AssignedWork = True
+        self.AssignedTest = test_overview_dictionary[test].TestID
         original_testtime = test_overview_dictionary[test].TestTime
         number_after_performance = round((original_testtime*60) / self.PerformanceRating)
         test_overview_dictionary[test].TestTime = float(f"{number_after_performance//60}.{number_after_performance%60}")
     def process(self):
         self.AvailabilityTime -= 1
         if self.AvailabilityTime > 0:
-            try:
-                pass
-            except:
-                pass
+            if self.AssignedTest:
+                test_overview_dictionary[self.AssignedTest].TestTime -= 1
+                if test_overview_dictionary[self.AssignedTest].TestTime < 1 and test_overview_dictionary[self.AssignedTest].TestTime != 0:
+                    self.TotalWaitTime += (test_overview_dictionary[self.AssignedTest].TestTime % 1)
+                    test_overview_dictionary[self.AssignedTest].TestTime = 1
+                elif test_overview_dictionary[self.AssignedTest].TestTime == 0:
+                    self.CompletedTests.append(test_overview_dictionary[self.AssignedTest].TestID)
+                    self.AssignedTest = None
+            else:
+                self.AssignedWork = False
+        else:
+            finished_workers.append(self)
+            self.JoinedTesting = False
 
 class Test:
     instances = []
@@ -51,9 +64,6 @@ class Test:
         self.AssignedWorker = worker
 
 ### PRE-PHASE ###
-
-# Start Time
-start_time = 0.00
 
 # Uses list comprehension to create the 24 hours (0-23).
 hrs = [str(x) for x in range(0,24)]
@@ -101,6 +111,9 @@ test_overview_dictionary = dict(test_dictionary_queue)
 active_worker_list = []
 active_test_list = []
 
+finished_workers = []
+finished_tests = []
+
 # This dictionary will contain information regarding the completed tests.
 completed_test_dictionary = {}
 
@@ -137,8 +150,8 @@ for time in times:
     ### |
     ### |
     ### --> SIMULATION "CHECK FOR AVAILABLE WORKERS PHASE": Checks for workers that are finished working and are now available <-- ###
-    for key, value in worker_dictionary_queue.items():
-        if str(value.AvailableToWork) == True and value not in worker_active_list:
+    for key, value in worker_overview_dictionary.items():
+        if value.AssignedWork == False and value not in active_worker_list and value.JoinedTesting == True:
             active_worker_list.append(value)
     ### END "CHECK FOR AVAILABLE WORKERS PHASE" ###
     ### |
@@ -154,7 +167,5 @@ for time in times:
             active_test_list.remove(test)
         except:
             pass
-#### END SIMULATION ####
 
-for test in Test.instances:
-    print(test)
+#### END SIMULATION ####
