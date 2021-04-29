@@ -66,7 +66,7 @@ class Test:
 ### PRE-PHASE ###
 
 # Uses list comprehension to create the 24 hours (0-23).
-hrs = [str(x) for x in range(0,24)]
+hrs = [str(x).zfill(2) for x in range(0,24)]
 
 # Uses list comprehension to create the minutes in an hour (0-59)
 # Uses .zfill() to create (00, 01, 02, 03 instead of 0,1,2,3)
@@ -81,10 +81,10 @@ for x in hrs:
         times.append(f"{x}.{y}")
 
 # Reference the workerlist file to simulate worker scenario
-worker_scenario = "workerlists/1initial_increase_in_worktimes_sample.csv"
+worker_scenario = "workerlists/1initial_increase_in_worktimes.csv"
 
 # Reference the tasklist file to simulate test scenario
-test_scenario = "tasklists/steady_flow_sample.csv"
+test_scenario = "tasklists/continuous_relaxed_flow.csv"
 
 # NOTE:
 # The following dictionaries are marked as "queues".
@@ -131,7 +131,9 @@ for time in times:
     # Adds the tests scheduled for current time to the "active_tests_queue" from the "test_dictionary_queue"
     tests_to_remove_from_queue = []
     for key, value in test_dictionary_queue.items():
-        if str(value.ScheduledTime).ljust(5,"0") == str(time).ljust(5,"0"):
+        if len(str(value.ScheduledTime))==3:
+            value.ScheduledTime = "0"+(str(value.ScheduledTime)+"0")
+        if str(value.ScheduledTime).zfill(5) == time:
             active_test_list.append(value)
             tests_to_remove_from_queue.append(key)
     for item in tests_to_remove_from_queue:
@@ -139,7 +141,10 @@ for time in times:
     # Adds the available workers to active workers list from the worker_dictionary_queue.
     workers_to_remove_from_queue = []
     for key, value in worker_dictionary_queue.items():
-        if str(value.StartTimeAvailable).ljust(5,"0") == str(time).ljust(5,"0"):
+        if len(str(value.StartTimeAvailable))==3:
+            value.StartTimeAvailable = "0"+(str(value.StartTimeAvailable)+"0")
+        if str(value.StartTimeAvailable).zfill(5) == time:
+            print(f"{value.WorkerID} gets added at {time}")
             active_worker_list.append(value)
             worker_overview_dictionary[key].JoinedTesting = True
             workers_to_remove_from_queue.append(key)
