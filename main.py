@@ -1,3 +1,4 @@
+import numpy as np
 # Classes
 class Worker:
     instances = []
@@ -10,7 +11,10 @@ class Worker:
         self.AssignedWork = False
         self.AssignedTest = None
         self.CompletedTests = []
-
+        self.NumberOfCompletedTests = len(self.CompletedTests)
+        self.WorkingIntervals = []
+        self.WaitingIntervals = []
+        self.checkpoint = None
         self.TotalWaitTime = 0.0
         self.instances.append(self)
 
@@ -19,16 +23,35 @@ class Worker:
         \n\tPerformance: {round(self.PerformanceRating*100)}%\
         \n\tRemaining availability: {self.AvailabilityTime}\
         \n\tJoinedTesting: {'Yes' if self.JoinedTesting else 'No'}\
-        \n\tAvailable to work at current time ({time}): {'No' if self.AssignedWork and self.JoinedTesting else 'Yes'}\
+        \n\tAvailable to work at current time ({time}): {'Yes' if self.AssignedWork == False and self.JoinedTesting else 'No'}\
         \n\tAssigned Test: {self.AssignedTest if self.AssignedTest else 'None'}\
         \n\tCompleted Tests: {' '.join(self.CompletedTests)}\
+        \n\tCompleted Tests count: {str(len(self.CompletedTests))}\
+        \n\tWaiting Time List: {self.WaitingIntervals}\
+        \n\tTest statistics:\
+        \n\tTest distribution min: {str(np.min(self.WorkingIntervals)) if self.WorkingIntervals else 'N/A' } \
+        \n\tTest distribution median: {str(np.median(self.WorkingIntervals)) if self.WorkingIntervals else 'N/A'}\
+        \n\tTest distribution mean: {str(np.mean(self.WorkingIntervals)) if self.WorkingIntervals else 'N/A'}\
+        \n\tTest distribution 75%: {str(np.percentile(self.WorkingIntervals,75)) if self.WorkingIntervals else 'N/A'}\
+        \n\tTest distribution max: {str(np.max(self.WorkingIntervals)) if self.WorkingIntervals else 'N/A'}\
+        \n\tWait interval statistics:\
+        \n\tWait distribution min: {str(np.min(self.WaitingIntervals)) if self.WaitingIntervals == True else 'N/A'}\
+        \n\tWait distribution median: {str(np.median(self.WaitingIntervals)) if self.WaitingIntervals == True else 'N/A'}\
+        \n\tWait distribution mean: {str(np.mean(self.WaitingIntervals)) if self.WaitingIntervals == True else 'N/A'}\
+        \n\tWait distribution 75%: {str(np.percentile(self.WaitingIntervals,75)) if self.WaitingIntervals == True else 'N/A'}\
+        \n\tWait distribution max: {str(np.max(self.WaitingIntervals)) if self.WaitingIntervals == True else 'N/A'}\
         \n\tTotal wait time: {self.TotalWaitTime}"
     def assigned_test(self, test):
         self.AssignedWork = True
         self.AssignedTest = test_overview_dictionary[test].TestID
         original_testtime = test_overview_dictionary[test].TestTime
-        number_after_performance = round((original_testtime*60) / self.PerformanceRating)
+        number_after_performance = round((float(original_testtime)*60) / float(self.PerformanceRating))
         test_overview_dictionary[test].TestTime = float(f"{number_after_performance//60}.{number_after_performance%60}")
+        # append the time differenece since we finished the last test to "WaitingIntervals"
+        self.WaitingIntervals.append(self.time_diff(time,self.checkpoint))
+        # set new checkpoint
+        self.checkpoint = time
+
     def process(self):
         self.AvailabilityTime -= 1
         if self.AvailabilityTime > 0:
@@ -40,12 +63,21 @@ class Worker:
                 elif test_overview_dictionary[self.AssignedTest].TestTime == 0:
                     self.CompletedTests.append(test_overview_dictionary[self.AssignedTest].TestID)
                     self.AssignedTest = None
+                    #self.WorkingIntervals.append(time_diff(time,self.checkpoint))
+                    #self.checkpoint = time
             else:
                 self.AssignedWork = False
                 self.TotalWaitTime += 1
         else:
             finished_workers.append(self)
             self.JoinedTesting = False
+
+    def time_diff(self, original, subtraction):
+        orig = original.split(".")
+        sub = subtraction.split(".")
+        origminutes = int(orig[0]) * 60 + int(orig[1])
+        subminutes = int(sub[0]) * 60 + int(sub[1])
+        return int(origminutes - subminutes)
 
 class Test:
     instances = []
@@ -152,6 +184,7 @@ for time in times:
         if str(value.StartTimeAvailable).zfill(5) == time:
             active_worker_list.append(value)
             worker_overview_dictionary[key].JoinedTesting = True
+            worker_overview_dictionary[key].checkpoint = time
             workers_to_remove_from_queue.append(key)
     for item in workers_to_remove_from_queue:
         del worker_dictionary_queue[item]
@@ -178,5 +211,5 @@ for time in times:
         except:
             pass
 #### END SIMULATION ####
-for x in Test.instances:
+for x in Worker.instances:
     print(x)
