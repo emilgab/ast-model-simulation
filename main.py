@@ -15,7 +15,7 @@ class Worker:
         self.WorkingIntervals = []
         self.WaitingIntervals = []
         self.checkpoint = None
-        self.TotalWaitTime = 0.0
+        self.TotalWaitTime = sum(self.WaitingIntervals)
         self.instances.append(self)
 
     def __str__(self):
@@ -29,17 +29,17 @@ class Worker:
         \n\tCompleted Tests count: {str(len(self.CompletedTests))}\
         \n\tWaiting Time List: {self.WaitingIntervals}\
         \n\tTest statistics:\
-        \n\tTest distribution min: {str(np.min(self.WorkingIntervals)) if self.WorkingIntervals else 'N/A' } \
-        \n\tTest distribution median: {str(np.median(self.WorkingIntervals)) if self.WorkingIntervals else 'N/A'}\
-        \n\tTest distribution mean: {str(np.mean(self.WorkingIntervals)) if self.WorkingIntervals else 'N/A'}\
-        \n\tTest distribution 75%: {str(np.percentile(self.WorkingIntervals,75)) if self.WorkingIntervals else 'N/A'}\
-        \n\tTest distribution max: {str(np.max(self.WorkingIntervals)) if self.WorkingIntervals else 'N/A'}\
+        \n\tTest distribution min: {str(np.min(self.WorkingIntervals)) if bool(self.WorkingIntervals) else 'N/A' } \
+        \n\tTest distribution median: {str(np.median(self.WorkingIntervals)) if bool(self.WorkingIntervals) else 'N/A'}\
+        \n\tTest distribution mean: {str(np.mean(self.WorkingIntervals)) if bool(self.WorkingIntervals) else 'N/A'}\
+        \n\tTest distribution 75%: {str(np.percentile(self.WorkingIntervals,75)) if bool(self.WorkingIntervals) else 'N/A'}\
+        \n\tTest distribution max: {str(np.max(self.WorkingIntervals)) if bool(self.WorkingIntervals) else 'N/A'}\
         \n\tWait interval statistics:\
-        \n\tWait distribution min: {str(np.min(self.WaitingIntervals)) if self.WaitingIntervals == True else 'N/A'}\
-        \n\tWait distribution median: {str(np.median(self.WaitingIntervals)) if self.WaitingIntervals == True else 'N/A'}\
-        \n\tWait distribution mean: {str(np.mean(self.WaitingIntervals)) if self.WaitingIntervals == True else 'N/A'}\
-        \n\tWait distribution 75%: {str(np.percentile(self.WaitingIntervals,75)) if self.WaitingIntervals == True else 'N/A'}\
-        \n\tWait distribution max: {str(np.max(self.WaitingIntervals)) if self.WaitingIntervals == True else 'N/A'}\
+        \n\tWait distribution min: {str(np.min(self.WaitingIntervals)) if bool(self.WaitingIntervals) else 'N/A'}\
+        \n\tWait distribution median: {str(np.median(self.WaitingIntervals)) if bool(self.WaitingIntervals) else 'N/A'}\
+        \n\tWait distribution mean: {str(np.mean(self.WaitingIntervals)) if bool(self.WaitingIntervals) else 'N/A'}\
+        \n\tWait distribution 75%: {str(np.percentile(self.WaitingIntervals,75)) if bool(self.WaitingIntervals) else 'N/A'}\
+        \n\tWait distribution max: {str(np.max(self.WaitingIntervals)) if bool(self.WaitingIntervals) else 'N/A'}\
         \n\tTotal wait time: {self.TotalWaitTime}"
     def assigned_test(self, test):
         self.AssignedWork = True
@@ -58,7 +58,6 @@ class Worker:
             if self.AssignedTest:
                 test_overview_dictionary[self.AssignedTest].TestTime -= 1
                 if test_overview_dictionary[self.AssignedTest].TestTime < 1 and test_overview_dictionary[self.AssignedTest].TestTime != 0:
-                    self.TotalWaitTime += (test_overview_dictionary[self.AssignedTest].TestTime % 1)
                     test_overview_dictionary[self.AssignedTest].TestTime = 1
                 elif test_overview_dictionary[self.AssignedTest].TestTime == 0:
                     self.CompletedTests.append(test_overview_dictionary[self.AssignedTest].TestID)
