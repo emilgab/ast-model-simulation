@@ -62,8 +62,8 @@ class Worker:
                 elif test_overview_dictionary[self.AssignedTest].TestTime == 0:
                     self.CompletedTests.append(test_overview_dictionary[self.AssignedTest].TestID)
                     self.AssignedTest = None
-                    #self.WorkingIntervals.append(time_diff(time,self.checkpoint))
-                    #self.checkpoint = time
+                    self.WorkingIntervals.append(self.time_diff(time,self.checkpoint))
+                    self.checkpoint = time
             else:
                 self.AssignedWork = False
                 self.TotalWaitTime += 1
@@ -82,18 +82,33 @@ class Test:
     instances = []
     def __init__(self, TestID, ScheduledTime, TestTime):
         self.TestID = str(TestID)
-        self.ScheduledTime = float(ScheduledTime)
+        self.ScheduledTime = ScheduledTime
         self.TestTime = float(TestTime)
         self.AssignedWorker = "N/A"
-
+        self.WaitTime = None
         self.instances.append(self)
     def __str__(self):
         return f"{self.TestID}: \n\tScheduled for testing at: {self.ScheduledTime}\
         \n\tTime it takes for testing: {self.TestTime}\
-        \n\tAssigned to worker: {self.AssignedWorker}"
+        \n\tAssigned to worker: {self.AssignedWorker}\
+        \n\tThis test waited in queue for: {self.WaitTime}"
 
     def assigned_worker(self, worker):
         self.AssignedWorker = worker
+        if float(time) == float(self.ScheduledTime):
+            self.WaitTime = 0
+        else:
+            self.WaitTime = self.time_diff(time,self.ScheduledTime)
+
+    def time_diff(self, original, subtraction):
+        orig = original.split(".")
+        sub = subtraction.split(".")
+        print("o",orig)
+        print("s",sub)
+        origminutes = int(orig[0]) * 60 + int(orig[1])
+        subminutes = int(sub[0]) * 60 + int(sub[1])
+        return int(origminutes - subminutes)
+
 
 ### PRE-PHASE ###
 
@@ -149,6 +164,12 @@ finished_tests = []
 # This dictionary will contain information regarding the completed tests.
 completed_test_dictionary = {}
 
+# Dictionary to keep track on how many available workers there are per time (Not working)
+available_workers_per_round = {}
+
+# Dictionary to keep track of the remaining tests per time
+remaining_tests_per_time = {}
+
 ### END OF PRE-PHASE ###
 
 ### SIMULATION ###
@@ -199,6 +220,12 @@ for time in times:
     ### |
     ### |
     ### |
+    ### --> Check for available workers and appends this value, with the time, in the dictoinary "available_workers_per_round"
+    available_workers_per_round[time] = len(active_worker_list)
+    ### --> End <--
+    ### |
+    ### |
+    ### |
     ### --> SIMULATION "DISTRIBUTE TESTS PHASE": Goes over the tests in the active_test_list and distributes these tests among the available workers <-- ###
     for test in active_test_list:
         try:
@@ -209,6 +236,18 @@ for time in times:
             active_test_list.remove(test)
         except:
             pass
+    ### END SIMULATION "DISTRIBUTE TESTS PHASE"
+    ### |
+    ### |
+    ### |
+    ### --> Check the remaining tests and adds this information to the dictionary "remaining_tests_per_time"
+    remaining_tests_per_time[time] = len(active_test_list)
 #### END SIMULATION ####
 for x in Worker.instances:
     print(x)
+
+for key, value in available_workers_per_round.items():
+    print(f"At {key}, {value} workers were available to work")
+
+for key, value in remaining_tests_per_time.items():
+    print(f"At {key}, {value} tests remained in queue")
