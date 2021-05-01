@@ -73,9 +73,9 @@ class Worker:
 
     def time_diff(self, original, subtraction):
         orig = original.split(".")
-        sub = subtraction.split(".")
+        subs = subtraction.split(".")
         origminutes = int(orig[0]) * 60 + int(orig[1])
-        subminutes = int(sub[0]) * 60 + int(sub[1])
+        subminutes = int(subs[0]) * 60 + int(subs[1])
         return int(origminutes - subminutes)
 
 class Test:
@@ -102,13 +102,10 @@ class Test:
 
     def time_diff(self, original, subtraction):
         orig = original.split(".")
-        sub = subtraction.split(".")
-        print("o",orig)
-        print("s",sub)
+        subs = subtraction.split(".")
         origminutes = int(orig[0]) * 60 + int(orig[1])
-        subminutes = int(sub[0]) * 60 + int(sub[1])
+        subminutes = int(subs[0]) * 60 + int(subs[1])
         return int(origminutes - subminutes)
-
 
 ### PRE-PHASE ###
 
@@ -131,7 +128,7 @@ for x in hrs:
 worker_scenario = "workerlists/1initial_increase_in_worktimes.csv"
 
 # Reference the tasklist file to simulate test scenario
-test_scenario = "tasklists/continuous_relaxed_flow.csv"
+test_scenario = "tasklists/continuous_intense.csv"
 
 # NOTE:
 # The following dictionaries are marked as "queues".
@@ -243,11 +240,3 @@ for time in times:
     ### --> Check the remaining tests and adds this information to the dictionary "remaining_tests_per_time"
     remaining_tests_per_time[time] = len(active_test_list)
 #### END SIMULATION ####
-for x in Worker.instances:
-    print(x)
-
-for key, value in available_workers_per_round.items():
-    print(f"At {key}, {value} workers were available to work")
-
-for key, value in remaining_tests_per_time.items():
-    print(f"At {key}, {value} tests remained in queue")
