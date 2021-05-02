@@ -37,6 +37,7 @@ def linear_graph_double_y(plots):
 
         plot_names = ["One","Two","Three","Four","Five"]
         colors = ["red","blue","orange","green","black"]
+        used_plot_names = []
 
         print("---------------\n")
         print(r"\begin{figure}[H]")
@@ -46,6 +47,7 @@ def linear_graph_double_y(plots):
         print(r"    scale only axis,")
         print(f"    height=5cm,")
         print(r"    width=\textwidth-2.7cm,")
+        print(r"    legend style={at={(0.3,0.9),anchor=west}},")
         print(r"    /pgf/number format/.cd,")
         print(r"    use comma,")
         print(r"    1000 sep={}]")
@@ -67,6 +69,7 @@ def linear_graph_double_y(plots):
             for x,y in plot:
                 print(f"    ({x},{y})")
             print(r"    };  \label"+"{"+plot_names[counter]+'}')
+            used_plot_names.append(plot_names[counter])
             counter += 1
 
         print(r"    \end{axis}")
@@ -76,13 +79,16 @@ def linear_graph_double_y(plots):
         # print(r"    ymin=0, ymax=100,")
         print(r"    ylabel=y-axis 2")
         print(r"    ]")
+        for iteration,name in enumerate(used_plot_names):
+            print(r"    \addlegendimage{/pgfplots/refstyle=",name,r"}\addlegendentry{","plot ",iteration,"}")
 
         for plot in plots_two:
             print(r"    \addplot[",colors[counter],']')
             print(r"    coordinates{")
             for x,y in plot:
                 print(f"    ({x},{y})")
-            print(r"    };  \label"+"{"+plot_names[counter]+'}')
+            print(r"    };  \addlegendentry"+"{"+plot_names[counter]+'}')
+            used_plot_names.append(plot_names[counter])
             counter += 1
         print(r"    \end{axis}")
 
