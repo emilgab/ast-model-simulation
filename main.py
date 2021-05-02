@@ -1,4 +1,5 @@
 import numpy as np
+from latex_files.graph_gen import linear_graph, linear_graph_double_y
 # Classes
 class Worker:
     instances = []
@@ -40,7 +41,8 @@ class Worker:
         \n\tWait distribution mean: {str(np.mean(self.WaitingIntervals)) if bool(self.WaitingIntervals) else 'N/A'}\
         \n\tWait distribution 75%: {str(np.percentile(self.WaitingIntervals,75)) if bool(self.WaitingIntervals) else 'N/A'}\
         \n\tWait distribution max: {str(np.max(self.WaitingIntervals)) if bool(self.WaitingIntervals) else 'N/A'}\
-        \n\tTotal wait time: {self.TotalWaitTime}"
+        \n\tTotal wait time: {self.TotalWaitTime}\
+        \n\tWorker utilization: {self.Utilization}%"
     def assigned_test(self, test):
         self.AssignedWork = True
         self.AssignedTest = test_overview_dictionary[test].TestID
@@ -164,6 +166,16 @@ completed_test_dictionary = {}
 # Dictionary to keep track on how many available workers there are per time (Not working)
 available_workers_per_round = {}
 
+# Dictionary to keep track on the amount of tests submitted each round
+total_tests_per_time = {}
+
+for x,y in test_overview_dictionary.items():
+    test_time = y.ScheduledTime
+    if test_time in total_tests_per_time:
+        total_tests_per_time[test_time] += 1
+    else:
+        total_tests_per_time[test_time] = 1
+
 # Dictionary to keep track of the remaining tests per time
 remaining_tests_per_time = {}
 
@@ -240,3 +252,17 @@ for time in times:
     ### --> Check the remaining tests and adds this information to the dictionary "remaining_tests_per_time"
     remaining_tests_per_time[time] = len(active_test_list)
 #### END SIMULATION ####
+
+def get_utilization():
+    worker_utilization = []
+    for x in Worker.instances:
+        util = sum(x.WorkingIntervals)/(sum(x.WorkingIntervals)+sum(x.WaitingIntervals))*100
+        worker_utilization.append((x.WorkerID,round(util)))
+    return worker_utilization
+
+plot_graphs = []
+plot_graphs.append([(x,y) for x,y in total_tests_per_time.items()])
+plot_graphs.append([(x,y) for x,y in available_workers_per_round.items()])
+
+
+linear_graph_double_y(plot_graphs)
