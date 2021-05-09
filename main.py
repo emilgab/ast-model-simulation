@@ -1,11 +1,13 @@
 import numpy as np
 from latex_files.graph_gen import linear_graph, linear_graph_double_y
+import ast
 # Classes
 class Worker:
     instances = []
     def __init__(self, WorkerID, StartTimeAvailable, PerformanceRating, AvailabilityTime):
         self.WorkerID = str(WorkerID)
         self.StartTimeAvailable = float(StartTimeAvailable)
+        self.InitialStartTime = float(StartTimeAvailable)
         self.PerformanceRating = float(PerformanceRating)
         self.AvailabilityTime = float(AvailabilityTime)
         self.JoinedTesting = False
@@ -85,6 +87,7 @@ class Test:
     def __init__(self, TestID, ScheduledTime, TestTime):
         self.TestID = str(TestID)
         self.ScheduledTime = ScheduledTime
+        self.InitialScheduledTime = ScheduledTime
         self.TestTime = float(TestTime)
         self.AssignedWorker = "N/A"
         self.WaitTime = None
@@ -93,7 +96,7 @@ class Test:
         return f"{self.TestID}: \n\tScheduled for testing at: {self.ScheduledTime}\
         \n\tTime it takes for testing: {self.TestTime}\
         \n\tAssigned to worker: {self.AssignedWorker}\
-        \n\tThis test waited in queue for: {self.WaitTime}"
+        \n\tThis test waited in queue for: {self.WaitTime} iterations"
 
     def assigned_worker(self, worker):
         self.AssignedWorker = worker
@@ -126,143 +129,202 @@ for x in hrs:
     for y in min:
         times.append(f"{x}.{y}")
 
-# Reference the workerlist file to simulate worker scenario
-worker_scenario = "workerlists/1initial_increase_in_worktimes.csv"
+# infrastructure files:
+infra_files = ["workerlists/infra_8.csv","workerlists/infra_16.csv", "workerlists/infra_32.csv", "workerlists/infra_64.csv"]
+for infra in infra_files:
+    worker_scenario = infra
+    # Reference the workerlist file to simulate worker scenario
+    #worker_scenario = "workerlists/infra_8.csv"
 
-# Reference the tasklist file to simulate test scenario
-test_scenario = "tasklists/continuous_intense.csv"
+    # Reference the tasklist file to simulate test scenario
+    test_scenario = "tasklists/varying_low.csv"
 
-# NOTE:
-# The following dictionaries are marked as "queues".
-# These dictionaries will contain ALL tests and ALL workers in the scenario.
-# The dictionaries will be checked by our simulation to know when a worker is available or when a test is submitted.
-# Creates a dictionary that will later be used to store the worker objects as values where the key is the workerID
-worker_dictionary_queue = {}
-with open(worker_scenario,"r") as csv_file:
-    for row in csv_file.readlines()[1:]:
-        split_row = row.split(",")
-        worker_dictionary_queue[split_row[0]] = Worker(split_row[0],split_row[1],split_row[2],split_row[3])
+    # NOTE:
+    # The following dictionaries are marked as "queues".
+    # These dictionaries will contain ALL tests and ALL workers in the scenario.
+    # The dictionaries will be checked by our simulation to know when a worker is available or when a test is submitted.
+    # Creates a dictionary that will later be used to store the worker objects as values where the key is the workerID
+    worker_dictionary_queue = {}
+    with open(worker_scenario,"r") as csv_file:
+        for row in csv_file.readlines()[1:]:
+            split_row = row.split(",")
+            worker_dictionary_queue[split_row[0]] = Worker(split_row[0],split_row[1],split_row[2],split_row[3])
 
-test_dictionary_queue = {}
-with open(test_scenario,"r") as csv_file:
-    for row in csv_file.readlines()[1:]:
-        split_row = row.split(",")
-        test_dictionary_queue[split_row[0]] = Test(split_row[0],split_row[1],split_row[2])
+    test_dictionary_queue = {}
+    with open(test_scenario,"r") as csv_file:
+        for row in csv_file.readlines()[1:]:
+            split_row = row.split(",")
+            test_dictionary_queue[split_row[0]] = Test(split_row[0],split_row[1],split_row[2])
 
-# Creates duplicate dictoinaries that will be used later for referencing
-worker_overview_dictionary = dict(worker_dictionary_queue)
-test_overview_dictionary = dict(test_dictionary_queue)
+    # Creates duplicate dictoinaries that will be used later for referencing
+    worker_overview_dictionary = dict(worker_dictionary_queue)
+    test_overview_dictionary = dict(test_dictionary_queue)
 
-# Following lists will contain the active tests and workers at any given time based on the times in the tasklists and workerlists
-active_worker_list = []
-active_test_list = []
+    # Following lists will contain the active tests and workers at any given time based on the times in the tasklists and workerlists
+    active_worker_list = []
+    active_test_list = []
 
-finished_workers = []
-finished_tests = []
+    finished_workers = []
+    finished_tests = []
 
-# This dictionary will contain information regarding the completed tests.
-completed_test_dictionary = {}
+    # This dictionary will contain information regarding the completed tests.
+    completed_test_dictionary = {}
 
-# Dictionary to keep track on how many available workers there are per time (Not working)
-available_workers_per_round = {}
+    # Dictionary to keep track on how many available workers there are per time (Not working)
+    available_workers_per_round = {}
 
-# Dictionary to keep track on the amount of tests submitted each round
-total_tests_per_time = {}
+    # Dictionary to keep track on the amount of tests submitted each round
+    total_tests_per_time = {}
 
-for x,y in test_overview_dictionary.items():
-    test_time = y.ScheduledTime
-    if test_time in total_tests_per_time:
-        total_tests_per_time[test_time] += 1
-    else:
-        total_tests_per_time[test_time] = 1
+    for x,y in test_overview_dictionary.items():
+        test_time = y.ScheduledTime
+        if test_time in total_tests_per_time:
+            total_tests_per_time[test_time] += 1
+        else:
+            total_tests_per_time[test_time] = 1
 
-# Dictionary to keep track of the remaining tests per time
-remaining_tests_per_time = {}
+    # Dictionary to keep track of the remaining tests per time
+    remaining_tests_per_time = {}
 
 ### END OF PRE-PHASE ###
 
 ### SIMULATION ###
 ### |
 # Iterates through the times of the day
-for time in times:
-    ### --> SIMULATION "WORK ON TEST"-PHASE: Every worker will process the tests they are assigned by "1" (representing 1 minute)
-    for key,value in worker_overview_dictionary.items():
-        if value.JoinedTesting == True:
-            value.process()
-    ### --> SIMULATION "CHECK"-PHASE: Checking the queue dictionaries and adding them in the active lists <-- ###
-    # Adds the tests scheduled for current time to the "active_tests_queue" from the "test_dictionary_queue"
-    tests_to_remove_from_queue = []
-    for key, value in test_dictionary_queue.items():
-        if len(str(value.ScheduledTime))==3:
-            value.ScheduledTime = "0"+(str(value.ScheduledTime)+"0")
-        if str(value.ScheduledTime).zfill(5) == time:
-            active_test_list.append(value)
-            tests_to_remove_from_queue.append(key)
-    for item in tests_to_remove_from_queue:
-        del test_dictionary_queue[item]
-    # Adds the available workers to active workers list from the worker_dictionary_queue.
-    workers_to_remove_from_queue = []
-    for key, value in worker_dictionary_queue.items():
-        if len(str(value.StartTimeAvailable)) < 5:
-            if len(str(value.StartTimeAvailable))==3:
-                value.StartTimeAvailable = "0"+(str(value.StartTimeAvailable)+"0")
-            elif len(str(value.StartTimeAvailable).split(".")[-1]) == 2:
-                value.StartTimeAvailable = str(value.StartTimeAvailable).zfill(5)
-            elif len(str(value.StartTimeAvailable).split(".")[-1]) == 1:
-                value.StartTimeAvailable = str(value.StartTimeAvailable).ljust(5,"0")
-        if str(value.StartTimeAvailable).zfill(5) == time:
-            active_worker_list.append(value)
-            worker_overview_dictionary[key].JoinedTesting = True
-            worker_overview_dictionary[key].checkpoint = time
-            workers_to_remove_from_queue.append(key)
-    for item in workers_to_remove_from_queue:
-        del worker_dictionary_queue[item]
-    ### END "CHECK"-PHASE ###
-    ### |
-    ### |
-    ### |
-    ### --> SIMULATION "CHECK FOR AVAILABLE WORKERS PHASE": Checks for workers that are finished working and are now available <-- ###
-    for key, value in worker_overview_dictionary.items():
-        if value.AssignedWork == False and value not in active_worker_list and value.JoinedTesting == True:
-            active_worker_list.append(value)
-    ### END "CHECK FOR AVAILABLE WORKERS PHASE" ###
-    ### |
-    ### |
-    ### |
-    ### --> Check for available workers and appends this value, with the time, in the dictoinary "available_workers_per_round"
-    available_workers_per_round[time] = len(active_worker_list)
-    ### --> End <--
-    ### |
-    ### |
-    ### |
-    ### --> SIMULATION "DISTRIBUTE TESTS PHASE": Goes over the tests in the active_test_list and distributes these tests among the available workers <-- ###
-    for test in active_test_list:
-        try:
-            assigned_worker = active_worker_list[0]
-            assigned_worker.assigned_test(test.TestID)
-            test.assigned_worker(assigned_worker.WorkerID)
-            active_worker_list.remove(assigned_worker)
-            active_test_list.remove(test)
-        except:
+    for time in times:
+        ### --> SIMULATION "WORK ON TEST"-PHASE: Every worker will process the tests they are assigned by "1" (representing 1 minute)
+        for key,value in worker_overview_dictionary.items():
+            if value.JoinedTesting == True:
+                value.process()
+        ### --> SIMULATION "CHECK"-PHASE: Checking the queue dictionaries and adding them in the active lists <-- ###
+        # Adds the tests scheduled for current time to the "active_tests_queue" from the "test_dictionary_queue"
+        tests_to_remove_from_queue = []
+        for key, value in test_dictionary_queue.items():
+            if len(str(value.ScheduledTime))==3:
+                value.ScheduledTime = "0"+(str(value.ScheduledTime)+"0")
+            if str(value.ScheduledTime).zfill(5) == time:
+                active_test_list.append(value)
+                tests_to_remove_from_queue.append(key)
+        for item in tests_to_remove_from_queue:
+            del test_dictionary_queue[item]
+        # Adds the available workers to active workers list from the worker_dictionary_queue.
+        workers_to_remove_from_queue = []
+        for key, value in worker_dictionary_queue.items():
+            if len(str(value.StartTimeAvailable)) < 5:
+                if len(str(value.StartTimeAvailable))==3:
+                    value.StartTimeAvailable = "0"+(str(value.StartTimeAvailable)+"0")
+                elif len(str(value.StartTimeAvailable).split(".")[-1]) == 2:
+                    value.StartTimeAvailable = str(value.StartTimeAvailable).zfill(5)
+                elif len(str(value.StartTimeAvailable).split(".")[-1]) == 1:
+                    value.StartTimeAvailable = str(value.StartTimeAvailable).ljust(5,"0")
+            if str(value.StartTimeAvailable).zfill(5) == time:
+                active_worker_list.append(value)
+                worker_overview_dictionary[key].JoinedTesting = True
+                worker_overview_dictionary[key].checkpoint = time
+                workers_to_remove_from_queue.append(key)
+        for item in workers_to_remove_from_queue:
+            del worker_dictionary_queue[item]
+        ### END "CHECK"-PHASE ###
+        ### |
+        ### |
+        ### |
+        ### --> SIMULATION "CHECK FOR AVAILABLE WORKERS PHASE": Checks for workers that are finished working and are now available <-- ###
+        for key, value in worker_overview_dictionary.items():
+            if value.AssignedWork == False and value not in active_worker_list and value.JoinedTesting == True:
+                active_worker_list.append(value)
+        ### END "CHECK FOR AVAILABLE WORKERS PHASE" ###
+        ### |
+        ### |
+        ### |
+        ### --> Check for available workers and appends this value, with the time, in the dictoinary "available_workers_per_round"
+        available_workers_per_round[time] = len(active_worker_list)
+        ### --> End <--
+        ### |
+        ### |
+        ### |
+        ### --> SIMULATION "DISTRIBUTE TESTS PHASE": Goes over the tests in the active_test_list and distributes these tests among the available workers <-- ###
+        for test in active_test_list:
+            try:
+                assigned_worker = active_worker_list[0]
+                assigned_worker.assigned_test(test.TestID)
+                test.assigned_worker(assigned_worker.WorkerID)
+                active_worker_list.remove(assigned_worker)
+                active_test_list.remove(test)
+            except:
+                pass
+        ### END SIMULATION "DISTRIBUTE TESTS PHASE"
+        ### |
+        ### |
+        ### |
+        ### --> Check the remaining tests and adds this information to the dictionary "remaining_tests_per_time"
+        remaining_tests_per_time[time] = len(active_test_list)
+    #### END SIMULATION ####
+
+
+    test_wait_time_stats = {}
+    for x in Test.instances:
+        if x.WaitTime == None:
             pass
-    ### END SIMULATION "DISTRIBUTE TESTS PHASE"
-    ### |
-    ### |
-    ### |
-    ### --> Check the remaining tests and adds this information to the dictionary "remaining_tests_per_time"
-    remaining_tests_per_time[time] = len(active_test_list)
-#### END SIMULATION ####
+        else:
+            if x.InitialScheduledTime in test_wait_time_stats:
+                test_wait_time_stats[x.InitialScheduledTime] = (test_wait_time_stats[x.InitialScheduledTime] + x.WaitTime)/2
+            else:
+                test_wait_time_stats[x.InitialScheduledTime] = x.WaitTime
 
-def get_utilization():
-    worker_utilization = []
+    test_wait_time_stats = {x: round(y) for x,y in test_wait_time_stats.items()}
+
+    test_wait_stats = []
+    test_wait_stats.append([(x,y) for x,y in test_wait_time_stats.items()])
+
+    filename = infra[12:-4]
+
+    with open("output_"+filename+"testwait","w") as file:
+        file.write(str(test_wait_stats))
+
+
+    def get_utilization():
+        worker_utilization = []
+        for x in Worker.instances:
+            util = round(sum(x.WorkingIntervals)/(sum(x.WorkingIntervals)+sum(x.WaitingIntervals))*100) if sum(x.WorkingIntervals)+sum(x.WaitingIntervals) > 0 else 0
+            worker_utilization.append((x.WorkerID,round(util)))
+            worker_overview_dictionary[x.WorkerID].Utilization = util
+        return worker_utilization
+    get_utilization()
+
+    utilization_stats = []
     for x in Worker.instances:
-        util = sum(x.WorkingIntervals)/(sum(x.WorkingIntervals)+sum(x.WaitingIntervals))*100
-        worker_utilization.append((x.WorkerID,round(util)))
-    return worker_utilization
+        utilization_stats.append(x.Utilization)
 
-plot_graphs = []
-plot_graphs.append([(x,y) for x,y in total_tests_per_time.items()])
-plot_graphs.append([(x,y) for x,y in available_workers_per_round.items()])
+    utilization_count = {}
+    for x in utilization_stats:
+        if x in utilization_count:
+            utilization_count[x] += 1
+        else:
+            utilization_count[x] = 1
 
+    dictionary_items = utilization_count.items()
+    sorted_items = sorted(dictionary_items)
+    sorted_items = list(sorted_items)
 
-linear_graph_double_y(plot_graphs)
+    utilization_stats = []
+    utilization_stats.append([(x,y) for x,y in sorted_items])
+
+    with open("output_"+filename+"utilization","w") as file:
+        file.write(str(utilization_stats))
+
+    workers_of_interest = []
+
+    for x in Worker.instances:
+        if str(x.InitialStartTime)[0:2] == "10" or str(x.InitialStartTime)[0:2] == "21":
+            workers_of_interest.append(x)
+
+    plot_graphs_available_tests = []
+    plot_graphs_available_tests.append([(x,y) for x,y in total_tests_per_time.items()])
+    plot_graphs_available_tests.append([(x,y) for x,y in available_workers_per_round.items()])
+    plot_graphs_available_tests.append([(x,y) for x,y in remaining_tests_per_time.items()])
+
+    with open("output_"+filename+"availability","w") as file:
+        file.write(str(plot_graphs_available_tests))
+
+#with open("output_infra_64utilization","r") as file:
+#    linear_graph(ast.literal_eval(file.readlines()[0]))

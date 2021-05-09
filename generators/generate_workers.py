@@ -10,7 +10,7 @@ worker_additional_dictionary = {}
 worker_increment = 1
 
 # Variable that consists of the number of workers that the taskfile should start of with
-initial_workers = 4
+initial_workers = 0
 
 # iterates over the range of the integer set in the initial_workers and uses enumerate
 for _ in range(0,initial_workers):
@@ -53,7 +53,7 @@ for time in times:
     # except:
     #     pass
     # This for-loop add additional workers (additional as in addition to the initial workers) to the dictionary called "worker_additional_dictionary"
-    for additionals in range(1,4):
+    for additionals in range(1,5):
         chance = random.randint(0,34)
         if chance == 1 or chance == 6:
             worker_additional_dictionary["W"+str(worker_increment).zfill(4)] = {

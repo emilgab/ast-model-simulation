@@ -2,15 +2,18 @@ import re
 import random
 import csv
 import string
+# Dictionary for counting number of tests per timestamp
 # time_count = {}
 #
-# I/O and For-loop used to extract data from dataset containing data on GitHub commits
+# # I/O and For-loop used to extract data from dataset containing data on GitHub commits
 # with open("full.csv", "r") as file:
 #     for row in file.readlines():
+#         # ReGex used to find the timestamp
 #         match = re.search("[0-9][0-9]+:[0-9][0-9]:[0-9][0-9]",row)
 #         if match:
 #             print(match.group(0))
 #             entry = match.group(0)[:5]
+#             # if-statement used to count how often a certain timestamp is used
 #             if entry in time_count:
 #                 print("Time found in dictionary, incrementing")
 #                 time_count[entry] += 1
@@ -54,9 +57,11 @@ chance_dictionary = {}
 population = [x for x,y in sorted_items]
 # Creates a list of the different "weights" that are used to pick a time later
 weights = [y for x,y in sorted_items]
-# Iteratation used to create the tests. The bigger number fo iterate more often tests will come.
-for _ in range(round(len(population)*3)):
+# Iteration used to create the tests. The bigger number to iterate more often tests will come.
+for _ in range(round(len(population))//2):
     # Picks a time of day to send a test, based on the weights (can also be known as "odds")
+    # "population" refer to the list containing each timestamp
+    # "weights" refer to the list containing the count for each timestamp
     pick = random.choices(population,weights)[0]
     # Checks if the time is already in the dictionary, if so then add a random character to have it be unique
     if pick in chance_dictionary:
@@ -73,11 +78,11 @@ for _ in range(round(len(population)*3)):
 
 dictionary_keys = chance_dictionary.keys()
 dictionary_keys = [x[0:5] for x in dictionary_keys]
-for time in times:
-    if time.zfill(5) not in dictionary_keys:
-            chance_dictionary[time.zfill(5)] = random.choices([1,2],[8,2])[0] + round(random.uniform(0.00,0.59),2)
-    else:
-        pass
+#for time in times:
+#    if time.zfill(5) not in dictionary_keys:
+#            chance_dictionary[time.zfill(5)] = random.choices([1,2],[8,2])[0] + round(random.uniform(0.00,0.59),2)
+#    else:
+#        pass
 
 # Sorts the test based on time.
 chance_dictionary_items = chance_dictionary.items()
