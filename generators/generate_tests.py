@@ -78,7 +78,9 @@ for _ in range(round(len(population))//2):
 
 dictionary_keys = chance_dictionary.keys()
 dictionary_keys = [x[0:5] for x in dictionary_keys]
-#for time in times:
+
+# Uncomment this for-loop to ensure that there will always be at least 1 test for every minute
+# for time in times:
 #    if time.zfill(5) not in dictionary_keys:
 #            chance_dictionary[time.zfill(5)] = random.choices([1,2],[8,2])[0] + round(random.uniform(0.00,0.59),2)
 #    else:
@@ -88,7 +90,7 @@ dictionary_keys = [x[0:5] for x in dictionary_keys]
 chance_dictionary_items = chance_dictionary.items()
 new_sort_items = sorted(chance_dictionary_items)
 
-# CSV FILE
+# Creating the CSV FILE
 with open("TESTFILENAME.csv","w") as csv_file:
     test_writer = csv.writer(csv_file, quotechar='"', quoting=csv.QUOTE_MINIMAL)
     counter = 1
@@ -96,20 +98,3 @@ with open("TESTFILENAME.csv","w") as csv_file:
     for x,y in new_sort_items:
         test_writer.writerow(["T"+str(counter).zfill(4),x[0:5],str(round(y,2)).ljust(4,"0")])
         counter += 1
-
-######## FOR GRAPH ############
-counter_dict = {}
-for time in times:
-    time = time.zfill(5)
-    for key in chance_dictionary.keys():
-        if time == key[0:5]:
-            if time in counter_dict:
-                counter_dict[time] += 1
-            else:
-                counter_dict[time] = 1
-
-plot_graph = [[]]
-for x,y in counter_dict.items():
-    plot_graph[0].append((x,y))
-
-print(plot_graph)

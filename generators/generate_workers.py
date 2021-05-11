@@ -38,6 +38,7 @@ for x in hrs:
 # Iterates through each time of the day
 for time in times:
     # This try/except block will introduce an increase in workers at the hours 10:00-18:59
+    # Uncomment for creating files based on this.
     # try:
     #     new_time = int(time[0:2])
     #     if new_time in range(10,18):
@@ -68,29 +69,9 @@ total_workers_dictionary = {**worker_initial_dictionary, **worker_additional_dic
 
 # Defines the filename for the CSV file
 csv_filename = "WORKERFILENAME.csv"
-# CSV FILE
+# Generating the CSV FILE
 with open(csv_filename,"w") as csv_file:
     worker_writer = csv.writer(csv_file, quotechar='"', quoting=csv.QUOTE_MINIMAL)
     worker_writer.writerow(["WorkerID","StartTimeAvailable","PerformanceRating","AvailabilityTime"])
     for x,y in total_workers_dictionary.items():
         worker_writer.writerow([x,y["StartTimeAvailable"],y["PerformanceRating"],y["AvailabilityTime"]])
-
-######## FOR GRAPH ############
-counter_dict = {}
-
-for time in times:
-    for x,y in total_workers_dictionary.items():
-        if float(time) == float(y["StartTimeAvailable"]):
-            if float(time) in counter_dict:
-                counter_dict[float(time)] += 1
-            else:
-                counter_dict[float(time)] = 1
-        else:
-            counter_dict[time] = 0
-
-
-plot_graph = [[]]
-for x,y in counter_dict.items():
-    plot_graph[0].append((x,y))
-
-# print(plot_graph)

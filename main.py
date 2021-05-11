@@ -129,9 +129,8 @@ for x in hrs:
     for y in min:
         times.append(f"{x}.{y}")
 
-worker_scenario = "workerlists/5initial_increase_in_worktimes.csv"
 # Reference the workerlist file to simulate worker scenario
-#worker_scenario = "workerlists/infra_8.csv"
+worker_scenario = "workerlists/5initial_increase_in_worktimes.csv"
 
 # Reference the tasklist file to simulate test scenario
 test_scenario = "tasklists/continuous_moderate.csv"
@@ -223,21 +222,15 @@ for time in times:
         del worker_dictionary_queue[item]
     ### END "CHECK"-PHASE ###
     ### |
-    ### |
-    ### |
     ### --> SIMULATION "CHECK FOR AVAILABLE WORKERS PHASE": Checks for workers that are finished working and are now available <-- ###
     for key, value in worker_overview_dictionary.items():
         if value.AssignedWork == False and value not in active_worker_list and value.JoinedTesting == True:
             active_worker_list.append(value)
     ### END "CHECK FOR AVAILABLE WORKERS PHASE" ###
     ### |
-    ### |
-    ### |
     ### --> Check for available workers and appends this value, with the time, in the dictoinary "available_workers_per_round"
     available_workers_per_round[time] = len(active_worker_list)
     ### --> End <--
-    ### |
-    ### |
     ### |
     ### --> SIMULATION "DISTRIBUTE TESTS PHASE": Goes over the tests in the active_test_list and distributes these tests among the available workers <-- ###
     for test in active_test_list:
@@ -251,46 +244,49 @@ for time in times:
             pass
     ### END SIMULATION "DISTRIBUTE TESTS PHASE"
     ### |
-    ### |
-    ### |
     ### --> Check the remaining tests and adds this information to the dictionary "remaining_tests_per_time"
     remaining_tests_per_time[time] = len(active_test_list)
 #### END SIMULATION ####
 
+#### START POST-PHASE ####
+
+# Creates a dictionary to contain the different test wait times for each test
+# KEY: The scheduled time a test was made availble
+# VALUE: The time that test had to wait before it was given a worker
 test_wait_time_stats = {}
 for x in Test.instances:
     if x.WaitTime == None:
         pass
     else:
+        # If the scheduled test time already exists, then we will add these values together and divide with 2
         if x.InitialScheduledTime in test_wait_time_stats:
             test_wait_time_stats[x.InitialScheduledTime] = (test_wait_time_stats[x.InitialScheduledTime] + x.WaitTime)/2
         else:
             test_wait_time_stats[x.InitialScheduledTime] = x.WaitTime
 
+# Uses list comprehension to round the float number of test wait time to an integer.
 test_wait_time_stats = {x: round(y) for x,y in test_wait_time_stats.items()}
 
+# Creates a list and appends values that will represent the test time for each timestamp
 test_wait_stats = []
 test_wait_stats.append([(x,y) for x,y in test_wait_time_stats.items()])
 
+# String that will be used together with the different with() functions to create similar filenames
 filename = "worker"
 
-#with open("output_"+filename+"testwait","w") as file:
-#    file.write(str(test_wait_stats))
+# Calculates the utilisation for each worker and adds this value to the workers
+worker_utilization = []
+for x in Worker.instances:
+    util = round(sum(x.WorkingIntervals)/(sum(x.WorkingIntervals)+sum(x.WaitingIntervals))*100) if sum(x.WorkingIntervals)+sum(x.WaitingIntervals) > 0 else 0
+    worker_utilization.append((x.WorkerID,round(util)))
+    worker_overview_dictionary[x.WorkerID].Utilization = util
 
-
-def get_utilization():
-    worker_utilization = []
-    for x in Worker.instances:
-        util = round(sum(x.WorkingIntervals)/(sum(x.WorkingIntervals)+sum(x.WaitingIntervals))*100) if sum(x.WorkingIntervals)+sum(x.WaitingIntervals) > 0 else 0
-        worker_utilization.append((x.WorkerID,round(util)))
-        worker_overview_dictionary[x.WorkerID].Utilization = util
-    return worker_utilization
-get_utilization()
-
+# Creates a list that will contain the utilisation stats
 utilization_stats = []
 for x in Worker.instances:
     utilization_stats.append(x.Utilization)
 
+# Dictionary that will count the appearence of each percentage
 utilization_count = {}
 for x in utilization_stats:
     if x in utilization_count:
@@ -298,29 +294,47 @@ for x in utilization_stats:
     else:
         utilization_count[x] = 1
 
+# Sorts the dictionary based on the percentage
 dictionary_items = utilization_count.items()
 sorted_items = sorted(dictionary_items)
 sorted_items = list(sorted_items)
 
+# Creates a list that will contain the different values of percentage and count in a toople
 utilization_stats = []
 utilization_stats.append([(x,y) for x,y in sorted_items])
 
-#with open("output_"+filename+"utilization","w") as file:
-#    file.write(str(utilization_stats))
-
-workers_of_interest = []
-
-for x in Worker.instances:
-    if str(x.InitialStartTime)[0:2] == "10" or str(x.InitialStartTime)[0:2] == "21":
-        workers_of_interest.append(x)
-
+# Creates lists that will contain tooples that each contain data on the count based on the dictionaries defined in the pre-phase
 plot_graphs_available_tests = []
 plot_graphs_available_tests.append([(x,y) for x,y in total_tests_per_time.items()])
 plot_graphs_available_tests.append([(x,y) for x,y in available_workers_per_round.items()])
 plot_graphs_available_tests.append([(x,y) for x,y in remaining_tests_per_time.items()])
 
-#with open("output_"+filename+"availability","w") as file:
+# Prints the data for each worker and each test
+for worker in Worker.instances:
+    print(worker)
+
+for test in Test.instances:
+    print(test)
+
+### STOP POST-PHASE ###
+
+### File outputs ###
+#
+# Uncomment the I/O operations for printing data on test wait time, availability data and utilization
+#
+#with open("output_"+filename+"_testwait","w") as file:
+#    file.write(str(test_wait_stats))
+
+#with open("output_"+filename+"_availability","w") as file:
 #    file.write(str(plot_graphs_available_tests))
 
-with open("output_worker_utilization","r") as file:
-    linear_graph(ast.literal_eval(file.readlines()[0]))
+#with open("output_"+filename+"_utilization","w") as file:
+#    file.write(str(utilization_stats))
+
+### Line graph for LaTeX generator ###
+#
+# Uncomment this I/O operation to pass data from a file generated above into the a graph function.
+# The graph function "linear_graph_double_y" only works with _availability files.
+#
+#with open("output_worker_availability","r") as file:
+#    linear_graph_double_y(ast.literal_eval(file.readlines()[0]))

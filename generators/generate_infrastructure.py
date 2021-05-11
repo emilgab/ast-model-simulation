@@ -1,7 +1,9 @@
 import csv
 
+# Contains number of individual cores/workers for the infrastructure scenario
 cores = 8
 
+# Name of the resulting .csv file
 csv_filename = "INFRASTRUCTUREFILE.csv"
 
 with open(csv_filename,"w") as csv_file:
